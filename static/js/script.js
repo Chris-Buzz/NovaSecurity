@@ -1420,74 +1420,86 @@ function speakMessage(message, speaker) {
     }
 
     // Only speak scammer messages
-    if (speaker === 'scammer' && ELEVENLABS_API_KEY) {
-        console.log(`DEBUG speakMessage: Requesting audio for scenario '${currentScenarioId}', text: '${message.substring(0, 50)}...'`);
+    if (speaker === 'scammer') {
+        console.log(`DEBUG speakMessage: text: '${message.substring(0, 50)}...'`);
+        console.log(`DEBUG: ELEVENLABS_API_KEY exists: ${!!ELEVENLABS_API_KEY}`);
         
-        // For iOS Safari - create Audio object BEFORE async fetch to maintain user gesture context
-        currentAudio = new Audio();
-        currentAudio.preload = 'auto';
-        currentAudio.volume = 1.0;
+        // ALWAYS use browser speech synthesis for reliability on mobile
+        // ElevenLabs API calls can be slow and unreliable on cellular connections
+        console.log('Using browser speech synthesis for immediate playback');
+        fallbackSpeak(message);
         
-        currentAudio.onended = () => {
-            currentAudio = null;
-            // Auto-activate microphone after scammer finishes
-            setTimeout(() => {
-                console.log('Scammer finished, auto-activating microphone');
-                if (!microphoneActive && SpeechRecognition) {
-                    startMicrophoneRecording();
-                }
-            }, 300);
-        };
-        
-        currentAudio.onerror = (err) => {
-            console.error('Audio error:', err);
-            currentAudio = null;
-            fallbackSpeak(message);
-        };
-        
-        // Generate audio using ElevenLabs
-        fetch(`${API_BASE}/scammer/audio`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                text: message,
-                voice_type: currentScenarioId
-            })
-        })
-        .then(res => res.json())
-        .then(data => {
-            console.log(`DEBUG speakMessage response:`, data);
-            if (data.success && data.audio && currentAudio) {
-                console.log(`DEBUG: Playing ElevenLabs audio for ${data.voice || 'unknown voice'}`);
-                
-                // Set the src on the pre-created Audio element
-                currentAudio.src = data.audio;
-                
-                // Try to play
-                const playPromise = currentAudio.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(err => {
-                        console.warn('Could not play ElevenLabs audio:', err);
-                        currentAudio = null;
-                        // Fallback to browser speech synthesis
-                        console.log('Falling back to browser speech synthesis');
-                        fallbackSpeak(message);
-                    });
-                }
-            } else {
-                // Fallback to browser speech synthesis
-                console.log('No audio data from API, falling back to browser speech synthesis');
+        /* Disabled ElevenLabs for mobile reliability
+        if (ELEVENLABS_API_KEY) {
+            // For iOS Safari - create Audio object BEFORE async fetch to maintain user gesture context
+            currentAudio = new Audio();
+            currentAudio.preload = 'auto';
+            currentAudio.volume = 1.0;
+            
+            currentAudio.onended = () => {
+                currentAudio = null;
+                // Auto-activate microphone after scammer finishes
+                setTimeout(() => {
+                    console.log('Scammer finished, auto-activating microphone');
+                    if (!microphoneActive && SpeechRecognition) {
+                        startMicrophoneRecording();
+                    }
+                }, 300);
+            };
+            
+            currentAudio.onerror = (err) => {
+                console.error('Audio error:', err);
                 currentAudio = null;
                 fallbackSpeak(message);
-            }
-        })
-        .catch(err => {
-            console.error('Error getting ElevenLabs audio:', err);
-            currentAudio = null;
-            // Fallback to browser speech synthesis
-            console.log('API error, falling back to browser speech synthesis');
+            };
+            
+            // Generate audio using ElevenLabs
+            fetch(`${API_BASE}/scammer/audio`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    text: message,
+                    voice_type: currentScenarioId
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                console.log(`DEBUG speakMessage response:`, data);
+                if (data.success && data.audio && currentAudio) {
+                    console.log(`DEBUG: Playing ElevenLabs audio for ${data.voice || 'unknown voice'}`);
+                    
+                    // Set the src on the pre-created Audio element
+                    currentAudio.src = data.audio;
+                    
+                    // Try to play
+                    const playPromise = currentAudio.play();
+                    if (playPromise !== undefined) {
+                        playPromise.catch(err => {
+                            console.warn('Could not play ElevenLabs audio:', err);
+                            currentAudio = null;
+                            // Fallback to browser speech synthesis
+                            console.log('Falling back to browser speech synthesis');
+                            fallbackSpeak(message);
+                        });
+                    }
+                } else {
+                    // Fallback to browser speech synthesis
+                    console.log('No audio data from API, falling back to browser speech synthesis');
+                    currentAudio = null;
+                    fallbackSpeak(message);
+                }
+            })
+            .catch(err => {
+                console.error('Error getting ElevenLabs audio:', err);
+                currentAudio = null;
+                // Fallback to browser speech synthesis
+                console.log('API error, falling back to browser speech synthesis');
+                fallbackSpeak(message);
+            });
+        } else {
             fallbackSpeak(message);
-        });
+        }
+        */
     }
 }
 
@@ -1495,17 +1507,40 @@ function fallbackSpeak(message) {
     // Clean up the message for speech
     const cleanMessage = message.replace(/[^\w\s.,!?'-]/g, '');
     
+    console.log('fallbackSpeak called with message:', cleanMessage.substring(0, 50));
+    
     const utterance = new SpeechSynthesisUtterance(cleanMessage);
     utterance.rate = 0.95;
     utterance.pitch = 1.0;
-    utterance.volume = 0.7;
+    utterance.volume = 1.0; // Increased volume for mobile
 
-    const voices = synth.getVoices();
-    if (voices.length > 0) {
-        utterance.voice = voices[Math.min(1, voices.length - 1)];
+    // iOS Safari requires getting voices after a delay sometimes
+    let voices = synth.getVoices();
+    if (voices.length === 0) {
+        // Wait for voices to load on iOS
+        synth.addEventListener('voiceschanged', () => {
+            voices = synth.getVoices();
+            if (voices.length > 0) {
+                // Prefer English voices
+                const englishVoice = voices.find(v => v.lang.startsWith('en-'));
+                utterance.voice = englishVoice || voices[0];
+            }
+            console.log('Using voice:', utterance.voice ? utterance.voice.name : 'default');
+            synth.speak(utterance);
+        }, { once: true });
+    } else {
+        // Voices already loaded
+        const englishVoice = voices.find(v => v.lang.startsWith('en-'));
+        utterance.voice = englishVoice || voices[0];
+        console.log('Using voice:', utterance.voice ? utterance.voice.name : 'default');
     }
 
+    utterance.onstart = () => {
+        console.log('Speech started');
+    };
+
     utterance.onend = () => {
+        console.log('Speech ended');
         // Auto-activate microphone after scammer finishes
         setTimeout(() => {
             console.log('Scammer finished speaking, auto-activating microphone');
@@ -1515,7 +1550,14 @@ function fallbackSpeak(message) {
         }, 300);
     };
 
-    synth.speak(utterance);
+    utterance.onerror = (event) => {
+        console.error('Speech synthesis error:', event);
+    };
+
+    // Start speaking immediately if voices are already loaded
+    if (voices.length > 0) {
+        synth.speak(utterance);
+    }
 }
 
 // Stop all audio and speech when page closes
