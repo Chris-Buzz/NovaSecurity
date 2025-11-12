@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SENTINEL - Elite Security Training Platform</title>
+    <link rel="stylesheet" href="static/css/styles.css">
+</head>
+<body>
+    <canvas id="particles-canvas"></canvas>
+    <div class="cyber-grid"></div>
+
+    <!-- Onboarding Screen -->
+    <div class="onboarding-overlay" id="onboardingScreen">
+        <div class="onboarding-container">
+            <button class="skip-btn" onclick="skipOnboarding()">Skip</button>
+
+            <div class="onboarding-slide active" data-slide="0">
+                <div class="slide-content">
+                    <div class="slide-title">Welcome to SENTINEL</div>
+                    <div class="slide-subtitle">Before we begin...</div>
+                    <div class="story-box">
+                        <p>Let me tell you a story about Grandma Dorothy...</p>
+                    </div>
+                    <button class="next-btn" onclick="nextSlide()">CONTINUE</button>
+                </div>
+            </div>
+
+            <div class="onboarding-slide" data-slide="1">
+                <div class="slide-content">
+                    <div class="grandma-scene">
+                        <div class="character">👵</div>
+                        <div class="speech-bubble">
+                            "Oh my! I won a FREE iPad from Microsoft! I just need to send them $500 in iTunes gift cards to claim it!"
+                        </div>
+                    </div>
+                    <div class="story-text">
+                        <p><strong>Grandma Dorothy, Age 72</strong></p>
+                        <p>Has sent over $12,000 in gift cards to "Microsoft tech support" this year.</p>
+                        <p>Also believes the IRS only accepts payment in Google Play cards.</p>
+                    </div>
+                    <button class="next-btn" onclick="nextSlide()">OH NO...</button>
+                </div>
+            </div>
+
+            <div class="onboarding-slide" data-slide="2">
+                <div class="slide-content">
+                    <div class="grandma-scene">
+                        <div class="character">👴</div>
+                        <div class="speech-bubble">
+                            "My password? It's 'password123' - easy to remember! I use it for everything: bank, email, Facebook, Netflix..."
+                        </div>
+                    </div>
+                    <div class="story-text">
+                        <p><strong>Grandpa Harold, Age 68</strong></p>
+                        <p>Password for his bank account: <code>password</code></p>
+                        <p>Backup password when he "needs a new one": <code>password1</code></p>
+                        <p>Has been hacked 7 times. Still doesn't understand why.</p>
+                    </div>
+                    <button class="next-btn" onclick="nextSlide()">CLASSIC HAROLD</button>
+                </div>
+            </div>
+
+            <div class="onboarding-slide" data-slide="3">
+                <div class="slide-content">
+                    <div class="grandma-scene">
+                        <div class="character">👵</div>
+                        <div class="speech-bubble">
+                            "The nice Nigerian prince emailed me! He just needs my bank account to transfer his $50 million inheritance!"
+                        </div>
+                    </div>
+                    <div class="story-text">
+                        <p><strong>Grandma Ethel, Age 75</strong></p>
+                        <p>Currently "helping" 6 different princes from Nigeria, Ghana, and "the country of Email."</p>
+                        <p>Has wired $8,000 to various "legal fees" and "processing costs."</p>
+                        <p>Still waiting for her share of the $300 million.</p>
+                    </div>
+                    <button class="next-btn" onclick="nextSlide()">THE CLASSICS</button>
+                </div>
+            </div>
+
+            <div class="onboarding-slide" data-slide="4">
+                <div class="slide-content">
+                    <div class="grandma-scene">
+                        <div class="character">👴</div>
+                        <div class="speech-bubble">
+                            "I got an email from my grandson saying he's in jail in Mexico! He needs $3,000 immediately! No time to call and verify!"
+                        </div>
+                    </div>
+                    <div class="story-text">
+                        <p><strong>Grandpa Walter, Age 81</strong></p>
+                        <p>Sent $3,000 via Western Union to "his grandson" (actually a scammer).</p>
+                        <p>His actual grandson was at home playing Xbox the entire time.</p>
+                        <p>When told it was a scam: "But the email said 'From: Grandson'!"</p>
+                    </div>
+                    <button class="next-btn" onclick="nextSlide()">POOR WALTER</button>
+                </div>
+            </div>
+
+            <div class="onboarding-slide" data-slide="5">
+                <div class="slide-content">
+                    <div class="slide-title">Don't Be Like Them</div>
+                    <div class="warning-box">
+                        <p><strong>Every Year:</strong></p>
+                        <ul>
+                            <li>Older adults lose over $3 billion to scams</li>
+                            <li>92% of data breaches involve weak passwords</li>
+                            <li>1 in 4 seniors fall for phishing attacks</li>
+                            <li>The "Microsoft Tech Support" scam still works (somehow)</li>
+                        </ul>
+                    </div>
+                    <div class="hero-text">
+                        <p>That's why you're here. To learn. To protect yourself and others.</p>
+                        <p><strong>Let's make you a cybersecurity expert.</strong></p>
+                    </div>
+                    <button class="next-btn" onclick="completeOnboarding()">START TRAINING</button>
+                </div>
+            </div>
+
+            <div class="slide-indicators">
+                <span class="indicator active" data-indicator="0"></span>
+                <span class="indicator" data-indicator="1"></span>
+                <span class="indicator" data-indicator="2"></span>
+                <span class="indicator" data-indicator="3"></span>
+                <span class="indicator" data-indicator="4"></span>
+                <span class="indicator" data-indicator="5"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Modal -->
+    <div class="modal-overlay" id="statsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>PERFORMANCE ANALYTICS</h2>
+                <button class="modal-close" onclick="closeStatsModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="stats-grid">
+                    <div class="stat-large">
+                        <div class="stat-large-value" id="modalTotalScore">0</div>
+                        <div class="stat-large-label">Total Score</div>
+                    </div>
+                    <div class="stat-large">
+                        <div class="stat-large-value" id="modalCompletedCount">0</div>
+                        <div class="stat-large-label">Challenges Completed</div>
+                    </div>
+                </div>
+
+                <div class="stats-section">
+                    <h3>GAME MODE STATISTICS</h3>
+                    <div class="mode-stats">
+                        <div class="mode-stat-item">
+                            <span class="mode-stat-label">Phishing Detective</span>
+                            <span class="mode-stat-value" id="phishingCompleted">0</span>
+                        </div>
+                        <div class="mode-stat-item">
+                            <span class="mode-stat-label">Password Cracker</span>
+                            <span class="mode-stat-value" id="passwordCompleted">0</span>
+                        </div>
+                        <div class="mode-stat-item">
+                            <span class="mode-stat-label">Network Call (AI)</span>
+                            <span class="mode-stat-value" id="networkCompleted">0</span>
+                        </div>
+                        <div class="mode-stat-item">
+                            <span class="mode-stat-label">SQL Detective</span>
+                            <span class="mode-stat-value" id="sqlCompleted">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stats-section">
+                    <h3>ACHIEVEMENTS</h3>
+                    <div class="achievements-grid" id="achievementsGrid"></div>
+                </div>
+
+                <div class="stats-section">
+                    <h3>STREAK & ACCURACY</h3>
+                    <div class="stats-row">
+                        <div class="stat-item-modal">
+                            <div class="stat-value-modal" id="modalCurrentStreak">0</div>
+                            <div class="stat-label-modal">Current Streak</div>
+                        </div>
+                        <div class="stat-item-modal">
+                            <div class="stat-value-modal" id="modalBestStreak">0</div>
+                            <div class="stat-label-modal">Best Streak</div>
+                        </div>
+                        <div class="stat-item-modal">
+                            <div class="stat-value-modal" id="modalAccuracy">0%</div>
+                            <div class="stat-label-modal">Overall Accuracy</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="game-container">
+        <div class="notch"></div>
+        <div class="phone-screen">
+            <canvas id="phone-particles-canvas"></canvas>
+            <div class="phone-cyber-grid"></div>
+
+            <div class="status-bar">
+                <span>SENTINEL TRAINING</span>
+                <span id="currentTime">12:34 PM</span>
+            </div>
+
+            <!-- Home Screen -->
+            <div class="screen active" id="homeScreen">
+                <div class="home-screen">
+                    <div class="logo-container">
+                        <div class="logo">SENTINEL</div>
+                        <div class="logo-subtitle">ELITE SECURITY TRAINING</div>
+                    </div>
+
+                    <div class="score-display">
+                        <div class="score-title">PERFORMANCE METRICS</div>
+                        <div class="score-row">
+                            <div class="score-item">
+                                <span class="score-value" id="totalScore">0</span>
+                                <span class="score-label">Score</span>
+                            </div>
+                            <div class="score-item">
+                                <span class="score-value" id="completedCount">0</span>
+                                <span class="score-label">Completed</span>
+                            </div>
+                            <div class="score-item">
+                                <span class="score-value" id="streakCount">0</span>
+                                <span class="score-label">Streak</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="game-mode-grid">
+                        <div class="game-mode-card" onclick="selectGameMode('phishing')">
+                            <div class="card-glow"></div>
+                            <span class="game-mode-icon">▶</span>
+                            <div class="game-mode-title">Phishing Detective</div>
+                            <div class="game-mode-desc">Identify suspicious messages</div>
+                            <div class="mode-progress">
+                                <div class="mode-progress-fill" id="phishingProgress"></div>
+                            </div>
+                        </div>
+                        <div class="game-mode-card" onclick="selectGameMode('password')">
+                            <div class="card-glow"></div>
+                            <span class="game-mode-icon">◆</span>
+                            <div class="game-mode-title">Password Cracker</div>
+                            <div class="game-mode-desc">Crack weak passwords</div>
+                            <div class="mode-progress">
+                                <div class="mode-progress-fill" id="passwordProgress"></div>
+                            </div>
+                        </div>
+                        <div class="game-mode-card" onclick="selectGameMode('network')">
+                            <div class="card-glow"></div>
+                            <span class="game-mode-icon">■</span>
+                            <div class="game-mode-title">Network Call</div>
+                            <div class="game-mode-desc">Call with AI scammer</div>
+                            <div class="mode-progress">
+                                <div class="mode-progress-fill" id="networkProgress"></div>
+                            </div>
+                        </div>
+                        <div class="game-mode-card" onclick="selectGameMode('sql')">
+                            <div class="card-glow"></div>
+                            <span class="game-mode-icon">◉</span>
+                            <div class="game-mode-title">SQL Detective</div>
+                            <div class="game-mode-desc">Find SQL vulnerabilities</div>
+                            <div class="mode-progress">
+                                <div class="mode-progress-fill" id="sqlProgress"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary" onclick="showStatsModal()">VIEW ANALYTICS</button>
+                    <button class="btn" onclick="resetProgress()">RESET PROGRESS</button>
+                </div>
+            </div>
+
+            <!-- Phishing Game Screen -->
+            <div class="screen" id="phishingScreen">
+                <div class="level-screen">
+                    <div class="level-header">
+                        <div class="level-title" id="levelTitle"></div>
+                        <div class="level-meta">
+                            <span class="level-type" id="levelType"></span>
+                            <span class="difficulty-badge" id="difficultyBadge"></span>
+                        </div>
+                        <div class="timer" id="timer">30s</div>
+                    </div>
+
+                    <div class="instruction">
+                        Click suspicious elements • Answer the question
+                    </div>
+
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressBar"></div>
+                    </div>
+
+                    <div class="message-box">
+                        <div class="message-sender" id="messageSender"></div>
+                        <div class="message-text" id="messageText"></div>
+                    </div>
+
+                    <div class="question-box">
+                        <div class="question-prompt" id="questionPrompt"></div>
+                        <div id="choicesContainer"></div>
+                    </div>
+
+                    <button class="btn btn-primary" id="submitBtn" onclick="submitPhishing()" disabled>SUBMIT ANSWER</button>
+                    <button class="btn" onclick="showHome()">BACK TO MENU</button>
+                </div>
+            </div>
+
+            <!-- Password Cracker Screen -->
+            <div class="screen" id="passwordScreen">
+                <div class="level-screen">
+                    <div class="level-header">
+                        <div class="level-title" id="passwordTitle"></div>
+                        <div class="timer" id="passwordTimer">60s</div>
+                    </div>
+
+                    <div class="instruction">
+                        Use intelligence to crack the password
+                    </div>
+
+                    <div class="password-display" id="passwordHash">
+                        <div class="password-hash-label">TARGET PASSWORD HASH</div>
+                        <div class="password-hash-dots">••••••••</div>
+                    </div>
+
+                    <div class="hint-list" id="passwordHints"></div>
+
+                    <input type="text" class="password-input" id="passwordInput" placeholder="Enter password..." maxlength="30">
+
+                    <div id="passwordFeedback" class="feedback-message"></div>
+
+                    <button class="btn btn-primary" onclick="checkPassword()">ATTEMPT CRACK</button>
+                    <button class="btn" onclick="showHome()">BACK TO MENU</button>
+                </div>
+            </div>
+
+            <!-- Network Defense Screen (Live Scammer Call) -->
+            <div class="screen" id="networkScreen">
+                <div class="level-screen">
+                    <div class="level-header">
+                        <div class="level-title" id="networkTitle">Live Scammer Call</div>
+                        <div class="timer" id="networkTimer">300s</div>
+                    </div>
+
+                    <div class="instruction">
+                        Incoming call detected • Answer and identify the scam
+                    </div>
+
+                    <!-- Incoming Call Interface -->
+                    <div id="incomingCallScreen" class="incoming-call-screen">
+                        <div class="call-ringing">
+                            <div class="phone-icon">📞</div>
+                            <div class="caller-display" id="incomingCallerName">Unknown Number</div>
+                            <div class="ringing-animation">
+                                <span class="ring-dot"></span>
+                                <span class="ring-dot"></span>
+                                <span class="ring-dot"></span>
+                            </div>
+                        </div>
+                        <div class="call-action-buttons">
+                            <button class="btn btn-danger" onclick="declineCall()" title="Decline call">Decline</button>
+                            <button class="btn btn-success" onclick="acceptCall()" title="Answer call">Answer</button>
+                        </div>
+                    </div>
+
+                    <!-- Active Call Interface (Hidden until answered) -->
+                    <div id="activeCallScreen" class="active-call-screen">
+                        <div class="call-interface">
+                            <div class="scammer-profile">
+                                <div class="avatar">📞</div>
+                                <div class="caller-name" id="callerName">Caller</div>
+                                <div class="call-duration" id="callDuration">0:00</div>
+                            </div>
+
+                            <div class="conversation-box" id="conversationBox">
+                                <!-- Messages appear here -->
+                            </div>
+
+                            <div class="input-group">
+                                <input type="text" id="userInput" placeholder="Type your response..." class="user-input" onkeypress="handleNetworkInputKeyPress(event)">
+                                <button class="btn btn-mic" id="micBtn" title="Use microphone">🎤</button>
+                            </div>
+                        </div>
+
+                        <div id="scamInfoTracker" class="scam-info-tracker">
+                            <div class="tracker-title">⚠️ Personal Info Requested:</div>
+                            <div class="info-list" id="infoList"></div>
+                        </div>
+
+                        <div id="networkFeedback" class="feedback-message"></div>
+
+                        <div class="button-group">
+                            <button class="btn btn-primary" onclick="submitNetworkResponse()">SEND</button>
+                            <button class="btn btn-danger" onclick="endCall()">END CALL</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SQL Injection Screen -->
+            <div class="screen" id="sqlScreen">
+                <div class="level-screen">
+                    <div class="level-header">
+                        <div class="level-title" id="sqlTitle"></div>
+                        <div class="timer" id="sqlTimer">60s</div>
+                    </div>
+
+                    <div class="instruction">
+                        Find the SQL injection vulnerability
+                    </div>
+
+                    <div class="code-editor" id="codeEditor"></div>
+
+                    <div id="sqlFeedback" class="feedback-message"></div>
+
+                    <button class="btn btn-primary" id="sqlSubmitBtn" onclick="submitSQL()" disabled>SUBMIT ANALYSIS</button>
+                    <button class="btn" onclick="showHome()">BACK TO MENU</button>
+                </div>
+            </div>
+
+            <!-- Result Screen -->
+            <div class="screen" id="resultScreen">
+                <div class="result-screen">
+                    <div class="result-icon" id="resultIcon"></div>
+                    <div class="result-title" id="resultTitle"></div>
+                    <div class="result-score">+<span id="levelScore">0</span></div>
+
+                    <div class="stats">
+                        <div class="stat-card">
+                            <div class="stat-value" id="accuracyStat">0</div>
+                            <div class="stat-label">Accuracy</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="timeStat">0s</div>
+                            <div class="stat-label">Time</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalScore2">0</div>
+                            <div class="stat-label">Total</div>
+                        </div>
+                    </div>
+
+                    <div class="tip-box">
+                        <div class="tip-title">SECURITY INSIGHT</div>
+                        <div class="tip-text" id="tipText"></div>
+                    </div>
+
+                    <div id="achievementUnlocked" class="achievement-notification"></div>
+
+                    <button class="btn btn-primary" onclick="nextChallenge()">NEXT CHALLENGE</button>
+                    <button class="btn" onclick="showHome()">BACK TO MENU</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- API Config -->
+    <script>
+        const API_BASE = '/api';
+        const ELEVENLABS_API_KEY = 'a3a44a82b031f40862d549b49dee261158f6406cbc447deff1f69c1fc4dd42ad';
+    </script>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
