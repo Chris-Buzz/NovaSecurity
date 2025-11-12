@@ -13,15 +13,11 @@ try:
     
     # Vercel will call this function
     handler = app
-    
-    # Add health check endpoint
-    @app.route('/health')
-    def health():
-        return {'status': 'ok'}, 200
         
 except Exception as e:
     print(f"Error loading app: {e}")
     import traceback
     traceback.print_exc()
     raise
+
 
