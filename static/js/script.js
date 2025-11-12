@@ -1423,6 +1423,28 @@ function speakMessage(message, speaker) {
     if (speaker === 'scammer' && ELEVENLABS_API_KEY) {
         console.log(`DEBUG speakMessage: Requesting audio for scenario '${currentScenarioId}', text: '${message.substring(0, 50)}...'`);
         
+        // For iOS Safari - create Audio object BEFORE async fetch to maintain user gesture context
+        currentAudio = new Audio();
+        currentAudio.preload = 'auto';
+        currentAudio.volume = 1.0;
+        
+        currentAudio.onended = () => {
+            currentAudio = null;
+            // Auto-activate microphone after scammer finishes
+            setTimeout(() => {
+                console.log('Scammer finished, auto-activating microphone');
+                if (!microphoneActive && SpeechRecognition) {
+                    startMicrophoneRecording();
+                }
+            }, 300);
+        };
+        
+        currentAudio.onerror = (err) => {
+            console.error('Audio error:', err);
+            currentAudio = null;
+            fallbackSpeak(message);
+        };
+        
         // Generate audio using ElevenLabs
         fetch(`${API_BASE}/scammer/audio`, {
             method: 'POST',
@@ -1435,27 +1457,13 @@ function speakMessage(message, speaker) {
         .then(res => res.json())
         .then(data => {
             console.log(`DEBUG speakMessage response:`, data);
-            if (data.success && data.audio) {
+            if (data.success && data.audio && currentAudio) {
                 console.log(`DEBUG: Playing ElevenLabs audio for ${data.voice || 'unknown voice'}`);
-                // Play the audio
-                currentAudio = new Audio(data.audio);
                 
-                // iOS requires these settings
-                currentAudio.preload = 'auto';
-                currentAudio.volume = 1.0;
+                // Set the src on the pre-created Audio element
+                currentAudio.src = data.audio;
                 
-                currentAudio.onended = () => {
-                    currentAudio = null;
-                    // Auto-activate microphone after scammer finishes
-                    setTimeout(() => {
-                        console.log('Scammer finished, auto-activating microphone');
-                        if (!microphoneActive && SpeechRecognition) {
-                            startMicrophoneRecording();
-                        }
-                    }, 300);
-                };
-                
-                // For iOS Safari - play must be called synchronously in user event handler context
+                // Try to play
                 const playPromise = currentAudio.play();
                 if (playPromise !== undefined) {
                     playPromise.catch(err => {
@@ -1469,6 +1477,7 @@ function speakMessage(message, speaker) {
             } else {
                 // Fallback to browser speech synthesis
                 console.log('No audio data from API, falling back to browser speech synthesis');
+                currentAudio = null;
                 fallbackSpeak(message);
             }
         })
