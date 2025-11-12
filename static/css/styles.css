@@ -2005,11 +2005,13 @@ body {
 .result-screen {
     text-align: center;
     padding: 30px 20px;
+    padding-bottom: calc(30px + env(safe-area-inset-bottom));
     display: flex;
     flex-direction: column;
     gap: 20px;
     overflow-y: auto;
     -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
 }
 
 .result-screen::-webkit-scrollbar {
@@ -2073,6 +2075,7 @@ body {
 
     .home-screen, .level-screen, .result-screen {
         padding: 15px 10px;
+        padding-bottom: calc(80px + env(safe-area-inset-bottom));
         gap: 12px;
     }
 

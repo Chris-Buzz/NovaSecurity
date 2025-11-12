@@ -1944,6 +1944,15 @@ function autoSubmit() {
 // ===== RESULTS =====
 function showResultWithCallDetails(points, accuracy, callDuration, tip, success, resultTitle, resultIcon) {
     showScreen('resultScreen');
+    
+    // Scroll to top for mobile so buttons are visible
+    setTimeout(() => {
+        const resultScreen = document.getElementById('resultScreen');
+        if (resultScreen) {
+            resultScreen.scrollTop = 0;
+        }
+        window.scrollTo(0, 0);
+    }, 100);
 
     gameState.totalScore += Math.max(points, 0);
     if (success) {
@@ -1985,6 +1994,15 @@ function showResultWithCallDetails(points, accuracy, callDuration, tip, success,
 
 function showResult(points, accuracy, time, tip, success) {
     showScreen('resultScreen');
+    
+    // Scroll to top for mobile so buttons are visible
+    setTimeout(() => {
+        const resultScreen = document.getElementById('resultScreen');
+        if (resultScreen) {
+            resultScreen.scrollTop = 0;
+        }
+        window.scrollTo(0, 0);
+    }, 100);
 
     gameState.totalScore += Math.max(points, 0);
     if (success) {
