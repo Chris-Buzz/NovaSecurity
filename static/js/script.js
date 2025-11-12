@@ -12,6 +12,37 @@ const Storage = {
     }
 };
 
+// ===== iOS AUDIO UNLOCK =====
+let audioContextUnlocked = false;
+let audioContext = null;
+
+function unlockAudioContext() {
+    if (audioContextUnlocked) return Promise.resolve();
+    
+    return new Promise((resolve) => {
+        // Create a silent audio element and play it to unlock audio on iOS
+        const silentAudio = new Audio('data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAACAAABhADAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwP////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAYYQfNwAAAAAAAAAAAAAAAAAAAAAA//sQZAAP8AAAaQAAAAgAAA0gAAABAAABpAAAACAAADSAAAAETEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//sQZA8P8AAAaQAAAAgAAA0gAAABAAABpAAAACAAADSAAAAEVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV');
+        silentAudio.volume = 0.01;
+        
+        const playPromise = silentAudio.play();
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                console.log('iOS Audio context unlocked');
+                audioContextUnlocked = true;
+                silentAudio.pause();
+                silentAudio.currentTime = 0;
+                resolve();
+            }).catch(err => {
+                console.warn('Could not unlock audio context:', err);
+                resolve(); // Still resolve to continue
+            });
+        } else {
+            audioContextUnlocked = true;
+            resolve();
+        }
+    });
+}
+
 // ===== GAME STATE =====
 let gameState = {
     totalScore: Storage.get('totalScore', 0),
@@ -1125,6 +1156,11 @@ function declineCall() {
 }
 
 function acceptCall() {
+    // Unlock iOS audio context on user interaction
+    unlockAudioContext().then(() => {
+        console.log('Audio ready for playback');
+    });
+    
     // Hide incoming call screen and show active call screen
     const incomingScreen = document.getElementById('incomingCallScreen');
     incomingScreen.style.display = 'none';
@@ -1403,6 +1439,11 @@ function speakMessage(message, speaker) {
                 console.log(`DEBUG: Playing ElevenLabs audio for ${data.voice || 'unknown voice'}`);
                 // Play the audio
                 currentAudio = new Audio(data.audio);
+                
+                // iOS requires these settings
+                currentAudio.preload = 'auto';
+                currentAudio.volume = 1.0;
+                
                 currentAudio.onended = () => {
                     currentAudio = null;
                     // Auto-activate microphone after scammer finishes
@@ -1413,13 +1454,18 @@ function speakMessage(message, speaker) {
                         }
                     }, 300);
                 };
-                currentAudio.play().catch(err => {
-                    console.warn('Could not play ElevenLabs audio:', err);
-                    currentAudio = null;
-                    // Fallback to browser speech synthesis
-                    console.log('Falling back to browser speech synthesis');
-                    fallbackSpeak(message);
-                });
+                
+                // For iOS Safari - play must be called synchronously in user event handler context
+                const playPromise = currentAudio.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(err => {
+                        console.warn('Could not play ElevenLabs audio:', err);
+                        currentAudio = null;
+                        // Fallback to browser speech synthesis
+                        console.log('Falling back to browser speech synthesis');
+                        fallbackSpeak(message);
+                    });
+                }
             } else {
                 // Fallback to browser speech synthesis
                 console.log('No audio data from API, falling back to browser speech synthesis');
