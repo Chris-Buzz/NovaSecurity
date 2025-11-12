@@ -1161,6 +1161,13 @@ function acceptCall() {
         console.log('Audio ready for playback');
     });
     
+    // CRITICAL FOR iOS: Prime speech synthesis with immediate user interaction
+    // iOS Safari requires at least one speak() call directly in user event handler
+    const primeUtterance = new SpeechSynthesisUtterance(' ');
+    primeUtterance.volume = 0.01;
+    window.speechSynthesis.speak(primeUtterance);
+    console.log('Speech synthesis primed for iOS');
+    
     // Hide incoming call screen and show active call screen
     const incomingScreen = document.getElementById('incomingCallScreen');
     incomingScreen.style.display = 'none';
@@ -1509,31 +1516,14 @@ function fallbackSpeak(message) {
     
     console.log('fallbackSpeak called with message:', cleanMessage.substring(0, 50));
     
+    // Cancel any ongoing speech
+    synth.cancel();
+    
     const utterance = new SpeechSynthesisUtterance(cleanMessage);
     utterance.rate = 0.95;
     utterance.pitch = 1.0;
-    utterance.volume = 1.0; // Increased volume for mobile
-
-    // iOS Safari requires getting voices after a delay sometimes
-    let voices = synth.getVoices();
-    if (voices.length === 0) {
-        // Wait for voices to load on iOS
-        synth.addEventListener('voiceschanged', () => {
-            voices = synth.getVoices();
-            if (voices.length > 0) {
-                // Prefer English voices
-                const englishVoice = voices.find(v => v.lang.startsWith('en-'));
-                utterance.voice = englishVoice || voices[0];
-            }
-            console.log('Using voice:', utterance.voice ? utterance.voice.name : 'default');
-            synth.speak(utterance);
-        }, { once: true });
-    } else {
-        // Voices already loaded
-        const englishVoice = voices.find(v => v.lang.startsWith('en-'));
-        utterance.voice = englishVoice || voices[0];
-        console.log('Using voice:', utterance.voice ? utterance.voice.name : 'default');
-    }
+    utterance.volume = 1.0; // Max volume for mobile
+    utterance.lang = 'en-US';
 
     utterance.onstart = () => {
         console.log('Speech started');
@@ -1551,13 +1541,23 @@ function fallbackSpeak(message) {
     };
 
     utterance.onerror = (event) => {
-        console.error('Speech synthesis error:', event);
+        console.error('Speech synthesis error:', event.error, event);
     };
 
-    // Start speaking immediately if voices are already loaded
+    // For iOS: Get voices and set immediately if available
+    const voices = synth.getVoices();
     if (voices.length > 0) {
-        synth.speak(utterance);
+        // Prefer English voices
+        const englishVoice = voices.find(v => v.lang.startsWith('en-')) || voices[0];
+        utterance.voice = englishVoice;
+        console.log('Using voice:', englishVoice ? englishVoice.name : 'default');
+    } else {
+        console.log('No voices loaded yet, using default');
     }
+
+    // Speak immediately - this MUST work since acceptCall primed the synthesis
+    console.log('Calling synth.speak()');
+    synth.speak(utterance);
 }
 
 // Stop all audio and speech when page closes
